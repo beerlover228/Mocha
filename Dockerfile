@@ -9,11 +9,8 @@ WORKDIR /app
 
 ENV GO_VER="1.23.2"
 ENV PATH="/usr/local/go/bin:/app/go/bin:${PATH}"
-ENV SEEDS=$(curl -sL https://raw.githubusercontent.com/celestiaorg/networks/master/mocha-4/seeds.txt | tr '\n' ',')
+ENV SEEDS="ee9f90974f85c59d3861fc7f7edb10894f6ac3c8@seed-mocha.pops.one:26656,258f523c96efde50d5fe0a9faeea8a3e83be22ca@seed.mocha-4.celestia.aviaone.com:20279,5d0bf034d6e6a8b5ee31a2f42f753f1107b3a00e@celestia-testnet-seed.itrocket.net:11656,7da0fb48d6ef0823bc9770c0c8068dd7c89ed4ee@celest-test-seed.theamsolutions.info:443"
 ENV RPC="https://celestia.rpc.t.stavr.tech:443"
-ENV LATEST_HEIGHT=$(curl -s $RPC/block | jq -r .result.block.header.height)
-ENV BLOCK_HEIGHT=$((LATEST_HEIGHT - 1000))
-ENV TRUST_HASH=$(curl -s "$RPC/block?height=$BLOCK_HEIGHT" | jq -r .result.block_id.hash)
 
 RUN wget "https://golang.org/dl/go$GO_VER.linux-amd64.tar.gz" && \
 tar -C /usr/local -xzf "go$GO_VER.linux-amd64.tar.gz" && \
@@ -38,12 +35,7 @@ sed -i -e "s/prometheus = false/prometheus = true/" $HOME/.celestia-app/config/c
 sed -i.bak -e "s/^external_address *=.*/external_address = \"$(wget -qO- eth0.me):26656\"/" $HOME/.celestia-app/config/config.toml && \
 sed -i -e "s/^indexer *=.*/indexer = \"null\"/" $HOME/.celestia-app/config/config.toml && \
 sed -i 's/max_num_inbound_peers =.*/max_num_inbound_peers = 40/g' $HOME/.celestia-app/config/config.toml && \
-sed -i 's/max_num_outbound_peers =.*/max_num_outbound_peers = 10/g' $HOME/.celestia-app/config/config.toml && \
-sed -i.bak -E "s|^(enable[[:space:]]+=[[:space:]]+).*$|\1true| ; \
-s|^(rpc_servers[[:space:]]+=[[:space:]]+).*$|\1\"$RPC,$RPC\"| ; \
-s|^(trust_height[[:space:]]+=[[:space:]]+).*$|\1$BLOCK_HEIGHT| ; \
-s|^(trust_hash[[:space:]]+=[[:space:]]+).*$|\1\"$TRUST_HASH\"| ; \
-s|^(seeds[[:space:]]+=[[:space:]]+).*$|\1\"\"|" $HOME/.celestia-app/config/config.toml
+sed -i 's/max_num_outbound_peers =.*/max_num_outbound_peers = 10/g' $HOME/.celestia-app/config/config.toml
 
 
 RUN celestia-appd tendermint unsafe-reset-all --home $HOME/.celestia-app && \
